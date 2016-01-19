@@ -1,7 +1,7 @@
-#include <MATH.H>
-#include <IOSTREAM.H>
-#include <FSTREAM.H>
-#include <STDLIB.H>
+#include <math.h>
+#include <iostream>
+#include <fstream>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -22,7 +22,7 @@ class train{
 
     void set_max_speed(const float _max_speed); // set1
 
-    virtual float get_maximum_speed(); // get1
+    virtual float get_maximum_speed()const; // get1
 
 
     friend istream& operator>>(istream& in, train& t); // stream input file
@@ -41,7 +41,7 @@ class freight_train:public train{
 
     public:
 
-    freight_train(float _maximum_speed = 0, int _max_cargo = 0, int _actual_cargo = 0) // constructor  **constructor of mother class should be included
+    freight_train(float _maximum_speed = 0, int _max_cargo = 0, int _actual_cargo = 0); // constructor  **constructor of mother class should be included
 
     virtual ~freight_train(); // destructor
 
@@ -54,15 +54,15 @@ class freight_train:public train{
 
     void set_max_cargo(const int _mc); // set1
 
-    int get_max_cargo(); // get1
+    int get_max_cargo()const; // get1
 
     void set_actual_cargo(const int _ac); // set2 // this may not necseesary
 
-    int get_actual_cargo(); // get2int
+    int get_actual_cargo() const; // get2int
 
-    virtual float get_maximum_speed();
+    virtual float get_maximum_speed()const;
 
-    int try_to_load_cargo_containers(const int cargo_add)(); // cannot be const function bc it want to change the actual_cargo
+    int try_to_load_cargo_containers(const int no_cargo); // cannot be const function bc it want to change the actual_cargo
 
 
     friend istream& operator>>(istream& in, freight_train& ft); // stream input file
@@ -76,7 +76,7 @@ class freight_train:public train{
 
         int max_cargo;
 
-        int actual_cargo
+        int actual_cargo;
 
 }; // class freight_train
 
@@ -86,9 +86,9 @@ class freight_train:public train{
 train::train(float _maximum_speed):maximum_speed(_maximum_speed){
 } // definition of constructor
 
-train::train(){} // definition of destructor
+train::~train(){} // definition of destructor
 
-train::train(istream& in);{
+train::train(istream& in){
 
     in>>*this;
 }
@@ -115,7 +115,7 @@ void train::set_max_speed(const float _max_speed){ // set1
 
 }
 
-float train::get_maximum_speed() const { // get1
+float train::get_maximum_speed()const{ // get1
 
     return maximum_speed;
 
@@ -131,7 +131,7 @@ freight_train::freight_train(float _maximum_speed, int _max_cargo, int _actual_c
 
 freight_train::~freight_train(){} // definition of destructor
 
-freight_train::freight_train(istream& in)train(in){
+freight_train::freight_train(istream& in):train(in){
 
     in>>*this;
 }
@@ -144,11 +144,11 @@ freight_train::freight_train(const freight_train& ft):train(ft){ // copy constru
 
 }
 
-const freight_train& freight_train::operator=(const freight_train& ft){ // operator equal
+freight_train& freight_train::operator=(const freight_train& ft){ // operator equal
 
-    if(this==&m) return(*this);
+    if(this==&ft) return(*this);
 
-
+    train::operator=(*this); // *** ???
 
     max_cargo = ft.max_cargo;
 
@@ -164,7 +164,7 @@ void freight_train::set_max_cargo(const int _mc){ // set1
 
 }
 
-int freight_train::get_max_cargo() const { // get1
+int freight_train::get_max_cargo()const{ // get1
 
     return max_cargo;
 
@@ -174,7 +174,7 @@ void freight_train::set_actual_cargo(const int _ac){ // set2
 
     if(_ac>=0&&_ac<=max_cargo){
 
-        actual_cargo = mark;
+        actual_cargo = _ac;
 
     }
 
@@ -186,14 +186,19 @@ int freight_train::get_actual_cargo() const { // get2
 
 }
 
-float train::get_maximum_speed() const { // let's say every 1 cargo container deduct speed by 1 percent
+float freight_train::get_maximum_speed() const { // let's say every 1 cargo container deduct speed by 1 percent
 
-    return (maximum_speed-((actual_cargo*maximum_speed)/100);
+    int g = get_maximum_speed();
+
+    return (g-(actual_cargo*(g))/100);
+    //return get_maximum_speed();
 
 }
 
 
-int freight_train::try_to_load_cargo_containers(const int cargo_add)(){
+int freight_train::try_to_load_cargo_containers(const int no_cargo){
+
+    /*
 
     int cargo_add_failed = 0;
 
@@ -204,7 +209,16 @@ int freight_train::try_to_load_cargo_containers(const int cargo_add)(){
     }
 
     return cargo_add_failed;
-}
+    */
+
+    const int available_space(max_cargo-actual_cargo);
+
+    const int no_cargo_add(available_space>=no_cargo?no_cargo:available_space);
+
+    actual_cargo+=no_cargo_add;
+
+    return(no_cargo-no_cargo_add);
+} // run to check this function, the solution is different
 
 //------------------------------istream-----------------------------------------
 
@@ -217,7 +231,7 @@ istream& operator>>(istream& in, train &t){
 
 }
 
-ostream& operator<<(ostream& out,train &t){
+ostream& operator<<(ostream& out,const train &t){
 
       out<<t.maximum_speed;
 
@@ -234,7 +248,7 @@ istream& operator>>(istream& in,freight_train &ft){
 
 }
 
-ostream& operator<<(ostream& out,freight_train &ft){
+ostream& operator<<(ostream& out,const freight_train &ft){
 
       out<<ft.max_cargo<<" "<<ft.actual_cargo<<endl;
 
@@ -258,38 +272,59 @@ int main()
 
   file_in1>>no_trains;
 
-  train_array = new*[no_trains]; // allocate size of array, number of trains
+  train_array = new freight_train*[no_trains]; // allocate size of array, number of trains
 
   for(int i = 0;i<no_trains;i++){
 
-      file_in1>>new train_array*[i]; // not sure
+      // file_in1>>new train_array*[i]; // not sure
+
+      train_array[i]=new freight_train(file_in1); // train_array is a pointer to array list.
+                                                  // We have to create new instance for it as it is not just one variable.
+                                                  // freight_train have 2 arguments in its constructor
 
   }
 
   // task 4.2
   int cargo_to_load = 0, cargo_left = 0, trains_w_cargo=0, cargo_last_train = 0;
 
-  cout << "Please enter the number of cargo to be loaded" << endl;
+  do{
 
-  cin >> cargo_to_load;
+      cout << "Please enter the number of cargo to be loaded" << endl;
+
+      cin >> cargo_to_load;
+
+  }while(cargo_to_load<0);
 
   // task 4.3
   for(int i = 0; i<no_trains&&cargo_to_load>0; i++){
 
-      cargo_last_train = cargo_to_load;
+      //cargo_last_train = cargo_to_load;
 
-      cargo_left = *train_array[i].try_to_load_cargo_containers(cargo_to_load);
+      /*
+
+      cargo_left = train_array[i]->try_to_load_cargo_containers(cargo_to_load);
 
       cargo_to_load = cargo_left;
 
-      trains_w_cargo = i;
+      */
+
+      //trains_w_cargo = i;
+
+      cargo_to_load = train_array[i]->try_to_load_cargo_containers(cargo_to_load);
+
+      cout<<"\nTrain number "<<i<<" "<<*train_array[i];
+
+
 
   }
 
-  // task 4.4
-  if(i==0){
+   cout<<"\nThe number of unloaded containers = "<<cargo_left;
 
-      cout<<"\n"<<cargo_last_train<<"cargo containers have been loaded to 1 train"
+  // task 4.4
+  /*
+  if(trains_w_cargo==0){
+
+      cout<<"\n"<<cargo_last_train<<"cargo containers have been loaded to 1 train";
 
   }
   else{
@@ -299,6 +334,7 @@ int main()
       cout<<"\n"<<"Every trains are full load except the last train which have "<<cargo_last_train<<" cargo containers loaded";
 
   }
+  */
 
 
 
